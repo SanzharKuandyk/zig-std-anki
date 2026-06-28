@@ -1,0 +1,12 @@
+[project]
+name = "zig-std-anki"
+version = "0.1.0"
+description = "Map Zig standard library declarations to Anki notes via AnkiConnect."
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+zig-std-anki = "zig_std_anki.__main__:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

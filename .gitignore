@@ -1,0 +1,6 @@
+.Codex/
+.agents/
+.zig-cache/
+.zig-global-cache/
+__pycache__/
+*.pyc
