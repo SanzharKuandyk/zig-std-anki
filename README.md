@@ -43,6 +43,12 @@ Write to Anki:
 .\sync.ps1 --write
 ```
 
+Write and split into ordered subdecks:
+
+```powershell
+.\sync.ps1 --write --partition-decks
+```
+
 Limit to one module:
 
 ```powershell

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .models import Note
+from .partition import part_for
 
 
 _PUB_FN_RE = re.compile(r"\bpub\s+(?:inline\s+|extern\s+|export\s+)?fn\s+([A-Za-z_][A-Za-z0-9_]*)\b")
@@ -79,7 +80,7 @@ def extract_file(path: Path, std_dir: Path, zig_version: str, module: str) -> li
         fqn = ".".join(p for p in fqn_parts if p)
         definition = _definition_from_docs(docs) or _definition_from_signature(fqn, signature, rel_source)
         example = _example_for(fqn, name, signature, docs, lines, line_no)
-        tags = _tags(module, zig_version, signature, docs, example)
+        tags = _tags(module, fqn, zig_version, signature, docs, example)
         front = f"{fqn}\n{signature}"
         back_parts = [
             definition or "No short documentation found.",
@@ -400,8 +401,9 @@ def _inside_test(lines: list[str], line_no: int) -> bool:
     return in_test
 
 
-def _tags(module: str, zig_version: str, signature: str, docs: list[str], example: str) -> tuple[str, ...]:
+def _tags(module: str, fqn: str, zig_version: str, signature: str, docs: list[str], example: str) -> tuple[str, ...]:
     tags = ["zig", f"zig-{zig_version}", "stdlib", module.replace(".", "::")]
+    tags.append(part_for(module, fqn).tag)
     if "comptime" in signature:
         tags.append("generic")
     doc_text = "\n".join(docs).lower()

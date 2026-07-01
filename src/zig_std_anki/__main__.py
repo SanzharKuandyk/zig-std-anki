@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .anki import AnkiConnect
 from .extractor import extract_notes
+from .partition import PARTS, part_deck, part_for
 from .zig_env import read_zig_env
 
 
@@ -49,6 +50,10 @@ def main() -> None:
             print(f"update batch {(index - 1) // args.batch_size + 1}")
         anki.update_note(existing[note.uid], note)
 
+    partition_result = {}
+    if args.partition_decks:
+        partition_result = partition_decks(anki, deck, notes)
+
     print(
         json.dumps(
             {
@@ -57,6 +62,7 @@ def main() -> None:
                 "added": sum(1 for item in added if item is not None),
                 "add_failures": sum(1 for item in added if item is None),
                 "updated": len(to_update),
+                "partitioned": partition_result,
             },
             indent=2,
         )
@@ -80,10 +86,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=100)
     parser.add_argument("--retries", type=int, default=5)
     parser.add_argument("--prune-stale", action="store_true", help="delete old generated notes with same fqn but stale uid")
+    parser.add_argument("--partition-decks", action="store_true", help="move cards into ordered subdecks under the parent deck")
     return parser.parse_args()
 
 
 def build_report(notes, version: str, std_dir: Path, deck: str, model: str) -> dict:
+    part_counts = {part.deck_suffix: 0 for part in PARTS}
+    for note in notes:
+        part_counts[part_for(note.module, note.fqn).deck_suffix] += 1
     return {
         "zig_version": version,
         "std_dir": str(std_dir),
@@ -95,6 +105,7 @@ def build_report(notes, version: str, std_dir: Path, deck: str, model: str) -> d
         "deprecated": sum(1 for n in notes if "deprecated" in n.tags),
         "generic": sum(1 for n in notes if "generic" in n.tags),
         "modules": len({n.module for n in notes}),
+        "parts": part_counts,
     }
 
 
@@ -129,6 +140,27 @@ def stale_notes(infos: list[dict], current_by_fqn: dict[str, set[str]]) -> list[
         if current_uids and uid and uid not in current_uids:
             stale.append(info["noteId"])
     return stale
+
+
+def partition_decks(anki: AnkiConnect, parent_deck: str, notes) -> dict[str, int]:
+    uid_to_part = {note.uid: part_for(note.module, note.fqn) for note in notes}
+    cards_by_part: dict[str, list[int]] = {part.deck_suffix: [] for part in PARTS}
+    for info in anki.note_infos(parent_deck):
+        fields = info.get("fields", {})
+        uid = fields.get("uid", {}).get("value", "")
+        part = uid_to_part.get(uid)
+        if not part:
+            continue
+        cards_by_part[part.deck_suffix].extend(info.get("cards", []))
+
+    moved: dict[str, int] = {}
+    for part in PARTS:
+        cards = cards_by_part[part.deck_suffix]
+        deck = part_deck(parent_deck, part)
+        anki.ensure_deck(deck)
+        anki.move_cards(cards, deck)
+        moved[part.deck_suffix] = len(cards)
+    return moved
 
 
 if __name__ == "__main__":

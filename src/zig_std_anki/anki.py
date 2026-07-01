@@ -105,6 +105,10 @@ class AnkiConnect:
         if note_ids:
             self.request("deleteNotes", notes=note_ids)
 
+    def move_cards(self, card_ids: list[int], deck: str) -> None:
+        if card_ids:
+            self.request("changeDeck", cards=card_ids, deck=deck)
+
 
 _CARD_TEMPLATE = {
     "Name": "API",
@@ -276,6 +280,10 @@ p {
 .tag-version {
   border-color: #a78bfa;
   color: #ddd6fe;
+}
+.tag-part {
+  border-color: #f472b6;
+  color: #fbcfe8;
 }
 .tag-generic {
   border-color: #fbbf24;

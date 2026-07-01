@@ -70,6 +70,8 @@ def _tag_chips(tags: tuple[str, ...]) -> str:
         cls = "tag"
         if tag.startswith("std::"):
             cls += " tag-module"
+        elif tag.startswith("part_"):
+            cls += " tag-part"
         elif tag.startswith("zig-"):
             cls += " tag-version"
         elif tag in {"generic", "deprecated", "needs_docs", "call_shape"}:
