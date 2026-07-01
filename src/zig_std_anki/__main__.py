@@ -14,7 +14,7 @@ def main() -> None:
     args = parse_args()
     env = read_zig_env(args.zig_exe)
     std_dir = Path(args.std_dir) if args.std_dir else env.std_dir
-    deck = args.deck or f"Zig::Stdlib::{env.version}"
+    deck = args.deck or f"Zig Stdlib {env.version}"
     model = args.model
 
     notes = extract_notes(std_dir, env.version, args.module)
