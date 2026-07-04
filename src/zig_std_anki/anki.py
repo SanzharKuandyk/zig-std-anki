@@ -229,38 +229,40 @@ p {
   white-space: pre;
   word-break: normal;
   font-family: "Cascadia Mono", "Cascadia Code", Consolas, "Liberation Mono", Menlo, monospace;
-  font-size: 15px;
-  line-height: 1.55;
-  font-weight: 450;
-  color: #f5f5f5;
-  background: #111318;
-  border: 1px solid #3f4652;
-  border-left: 4px solid #8ab4f8;
+  font-size: 14px;
+  line-height: 1.7;
+  font-weight: 400;
+  color: #e6edf3;
+  background: #161a21;
+  border: 1px solid #303846;
+  border-left: 3px solid #6ea8fe;
   border-radius: 4px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 .tok-kw {
-  color: #ff7b72;
-  font-weight: 700;
+  color: #f47067;
+  font-weight: 500;
 }
 .tok-type {
-  color: #79c0ff;
-  font-weight: 650;
+  color: #76b7ff;
+  font-weight: 450;
 }
 .tok-builtin {
-  color: #d2a8ff;
+  color: #c8a6ff;
 }
 .tok-string {
-  color: #a5d6ff;
+  color: #9dd9ff;
 }
 .tok-number {
-  color: #79c0ff;
+  color: #8cc8ff;
 }
 .tok-comment {
-  color: #8b949e;
+  color: #8d96a0;
   font-style: italic;
 }
 .signature {
-  font-size: 15px;
+  font-size: 14px;
 }
 .info {
   margin: 0;
