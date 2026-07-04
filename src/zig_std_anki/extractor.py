@@ -81,16 +81,8 @@ def extract_file(path: Path, std_dir: Path, zig_version: str, module: str) -> li
         definition = _definition_from_docs(docs) or _definition_from_signature(fqn, signature, rel_source)
         example = _example_for(fqn, name, signature, docs, lines, line_no)
         tags = _tags(module, fqn, zig_version, signature, docs, example)
-        front = f"{fqn}\n{signature}"
-        back_parts = [
-            definition or "No short documentation found.",
-            "",
-            "Example:",
-            example or "No compact example found.",
-            "",
-            f"Source: {rel_source}:{line_no}",
-            f"Zig: {zig_version}",
-        ]
+        structure = _structure_info(fqn, signature)
+        return_info = _return_info(fqn, signature)
         uid = _uid(zig_version, fqn, signature)
         notes.append(
             Note(
@@ -101,8 +93,8 @@ def extract_file(path: Path, std_dir: Path, zig_version: str, module: str) -> li
                 kind="function",
                 signature=signature,
                 definition=definition,
-                front=_clip(front, 500),
-                back=_clip("\n".join(back_parts), 1200),
+                front=_clip(structure, 1200),
+                back=_clip(return_info, 1200),
                 example=example,
                 source_path=rel_source,
                 source_line=line_no,
@@ -513,6 +505,97 @@ def _signature_params(signature: str) -> list[str]:
         if name:
             params.append(name)
     return params
+
+
+def _signature_param_details(signature: str) -> list[tuple[str, str]]:
+    start = signature.find("(")
+    if start == -1:
+        return []
+    depth = 0
+    end = -1
+    for i in range(start, len(signature)):
+        if signature[i] == "(":
+            depth += 1
+        elif signature[i] == ")":
+            depth -= 1
+            if depth == 0:
+                end = i
+                break
+    if end == -1:
+        return []
+    details = []
+    for part in _split_top_level(signature[start + 1 : end]):
+        part = part.strip()
+        if not part or part == "..." or ":" not in part:
+            continue
+        name, typ = part.split(":", 1)
+        name = name.strip()
+        typ = typ.strip()
+        for prefix in ("comptime ", "noalias "):
+            if name.startswith(prefix):
+                name = name[len(prefix) :].strip()
+                typ = f"{prefix.strip()} {typ}"
+        details.append((name.lstrip("*").strip(), typ))
+    return details
+
+
+def _structure_info(fqn: str, signature: str) -> str:
+    owner = fqn.rsplit(".", 1)[0]
+    params = _signature_param_details(signature)
+    lines = [
+        f"Kind: function",
+        f"Owner: {owner}",
+        f"Call style: {_call_style(params)}",
+        "Parameters:",
+    ]
+    if params:
+        for name, typ in params:
+            lines.append(f"- {name}: {typ}")
+    else:
+        lines.append("- none")
+    effects = _effects(fqn, signature)
+    if effects:
+        lines.extend(["Effects:", *[f"- {effect}" for effect in effects]])
+    return "\n".join(lines)
+
+
+def _return_info(fqn: str, signature: str) -> str:
+    ret = _collapse_ws(_return_type(signature)) or "void"
+    lines = [f"Return type: {ret}"]
+    if "!" in ret:
+        lines.append("Error behavior: may return an error; call with `try`, `catch`, or handle error union.")
+    if ret.startswith("?") or "?" in ret:
+        lines.append("Optional behavior: result may be null; unwrap/check before use.")
+    if any(word in fqn.lower() for word in ("alloc", "create", "dupe", "owned")):
+        lines.append("Ownership: caller usually owns returned memory/value and must free/destroy it.")
+    if ret == "void":
+        lines.append("Meaning: used for side effects, mutation, cleanup, or writing into caller-provided storage.")
+    return "\n".join(lines)
+
+
+def _call_style(params: list[tuple[str, str]]) -> str:
+    if not params:
+        return "static function"
+    first_name, first_type = params[0]
+    if first_name == "self" or "@This" in first_type or "Self" in first_type:
+        return "method-style call on receiver"
+    return "namespace function"
+
+
+def _effects(fqn: str, signature: str) -> list[str]:
+    lower = fqn.lower()
+    effects = []
+    if any(word in lower for word in ("alloc", "create", "dupe")):
+        effects.append("allocates memory")
+    if any(word in lower for word in ("free", "destroy", "deinit")):
+        effects.append("releases resources")
+    if any(word in lower for word in ("append", "insert", "remove", "pop", "clear", "resize")):
+        effects.append("mutates container/state")
+    if any(word in lower for word in ("read", "write", "print", "format")):
+        effects.append("performs IO or writes to caller-provided output")
+    if "comptime" in signature:
+        effects.append("uses comptime type/value parameters")
+    return effects
 
 
 def _split_top_level(raw: str) -> list[str]:

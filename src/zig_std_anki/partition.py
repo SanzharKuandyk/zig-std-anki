@@ -31,9 +31,29 @@ PARTS = [
 
 def part_for(module: str, fqn: str) -> Part:
     path = f"{module}.{fqn}".lower()
+    name = fqn.rsplit(".", 1)[-1]
 
-    if any(key in path for key in ("std.testing", "std.debug", "std.builtin")):
+    core_fqns = {
+        "std.debug.print",
+        "std.mem.eql",
+        "std.mem.startsWith",
+        "std.mem.endsWith",
+        "std.mem.indexOf",
+        "std.mem.splitScalar",
+        "std.mem.tokenizeScalar",
+        "std.mem.copyForwards",
+        "std.mem.Allocator.alloc",
+        "std.mem.Allocator.free",
+        "std.mem.Allocator.create",
+        "std.mem.Allocator.destroy",
+        "std.mem.Allocator.dupe",
+        "std.testing.expect",
+        "std.testing.expectEqual",
+        "std.testing.expectEqualStrings",
+    }
+    if fqn in core_fqns or (".ArrayList" in fqn and name in {"init", "append", "appendSlice", "deinit"}):
         return PARTS[0]
+
     if any(key in path for key in ("std.mem.", "std.mem", "std.array", "hash_map", "array_hash_map", "std.heap")):
         return PARTS[1]
     if any(key in path for key in ("std.fs", "std.io", "std.io.", "std.Io".lower(), "std.posix")):

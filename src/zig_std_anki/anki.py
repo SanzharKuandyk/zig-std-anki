@@ -133,6 +133,14 @@ _CARD_TEMPLATE = {
     <p>{{definition}}</p>
   </section>
   <section class="panel">
+    <h2>Return</h2>
+    <pre class="info"><code>{{back}}</code></pre>
+  </section>
+  <section class="panel">
+    <h2>Structure</h2>
+    <pre class="info"><code>{{front}}</code></pre>
+  </section>
+  <section class="panel">
     <h2>Example</h2>
     <pre class="code"><code>{{example}}</code></pre>
   </section>
@@ -253,6 +261,19 @@ p {
 }
 .signature {
   font-size: 15px;
+}
+.info {
+  margin: 0;
+  padding: 12px 14px;
+  white-space: pre-wrap;
+  font-family: "Segoe UI Variable", "Segoe UI", Arial, Helvetica, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 560;
+  color: #f0f0f0;
+  background: #181a1f;
+  border: 1px solid #3f4652;
+  border-radius: 4px;
 }
 .panel {
   margin-top: 18px;
